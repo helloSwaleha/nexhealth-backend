@@ -1,0 +1,20 @@
+package com.clinic.management.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AddDoctorRequest {
+    private String name;
+    private String email;
+    private String password;
+    private String phone;
+    private String specialization;
+    private String qualification; // Warning disappears once used in Controller
+    private Integer experience;
+    private Double fee;
+    private Long clinicId;
+}
