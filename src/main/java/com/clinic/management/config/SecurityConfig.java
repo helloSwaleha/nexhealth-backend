@@ -47,6 +47,7 @@ public class SecurityConfig {
             // 4. AUTHORIZE REQUESTS
             .authorizeHttpRequests(auth -> auth
                 // ✅ PUBLIC ENDPOINTS: Accessible without a token
+            		.requestMatchers("/").permitAll() // Allows the root URL to be viewed
                 .requestMatchers("/api/patient/login").permitAll() 
                 .requestMatchers("/api/patient/signup").permitAll()
                 .requestMatchers("/auth/**").permitAll()
@@ -95,14 +96,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Set specific origin for security
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        
+        // ✅ Add your Render Frontend URL here alongside localhost
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",
+            "https://nexhealth-frontend.onrender.com" // Replace with your actual Render frontend URL
+        ));
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Apply this to all endpoints
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
