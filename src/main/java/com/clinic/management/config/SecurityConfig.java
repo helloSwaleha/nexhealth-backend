@@ -46,50 +46,28 @@ public class SecurityConfig {
 
             // 4. AUTHORIZE REQUESTS
             .authorizeHttpRequests(auth -> auth
-                // ✅ PUBLIC ENDPOINTS: Accessible without a token
-            		.requestMatchers("/").permitAll() // Allows the root URL to be viewed
-                .requestMatchers("/api/patient/login").permitAll() 
-                .requestMatchers("/api/patient/signup").permitAll()
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/error").permitAll() 
-                
-                // 🔹 FIX: Move Clinics to public so the UI can load them immediately
-                .requestMatchers("/api/clinics/**").permitAll() 
-                
-                // 🔐 APPOINTMENT ACCESS: Requires login
-             // ✅ Ensure Doctors can access their own profile via GET
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors/**").permitAll() 
-                // Only doctors can update their specific data
-               
-                .requestMatchers("/appointments/**").hasAnyRole("PATIENT", "DOCTOR", "ADMIN")
-                .requestMatchers("/appointments/**").hasAnyRole("PATIENT", "DOCTOR", "ADMIN")
-
-                // 🔐 PATIENT ACCESS
-                .requestMatchers("/api/patient/**").hasRole("PATIENT")
-                .requestMatchers("/api/patient/prescriptions/**").hasRole("PATIENT")
-                .requestMatchers("/patient/**").hasRole("PATIENT")
-                .requestMatchers("/api/doctors/clinic/**").permitAll()
-                .requestMatchers("/api/doctors/**").permitAll()
-                .requestMatchers("/doctors/**").permitAll()
-                .requestMatchers("/api/doctors/clinic/**").permitAll()
-             // 1. Allow everyone (or at least Patients) to VIEW doctor details
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/doctor/**").hasAnyRole("PATIENT", "DOCTOR", "ADMIN")
-                
-                // 🔐 DOCTOR ACCESS
-                .requestMatchers("/doctor/**").hasAuthority("DOCTOR")
-             // 2. Keep DOCTOR specific actions (like updating profile) restricted to Doctors
-                .requestMatchers("/doctor/update/**", "/doctor/dashboard/**").hasRole("DOCTOR")
-                
-                // 🔐 ADMIN ACCESS
-                .requestMatchers("/admin/**").hasAuthority("ADMIN")
-               
-             // In your SecurityConfig.java
-                .requestMatchers("/admin/prescriptions/**").hasRole("ADMIN")
-                
-                // Everything else requires a valid JWT
-                .anyRequest().authenticated()
-            )
-
+    // 1. PUBLIC ENDPOINTS
+    .requestMatchers("/", "/error", "/auth/**").permitAll()
+    .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
+    .requestMatchers("/api/clinics/**", "/api/doctors/**", "/doctors/**").permitAll()
+    
+    // 2. ADMIN ACCESS (Unified to use 'hasRole')
+    // Note: ensure your JwtFilter adds "ROLE_" prefix to the authority
+    .requestMatchers("/admin/**").hasRole("ADMIN")
+    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+    
+    // 3. DOCTOR ACCESS
+    .requestMatchers("/doctor/dashboard/**", "/doctor/update/**").hasRole("DOCTOR")
+    .requestMatchers("/doctor/**").hasAnyRole("DOCTOR", "ADMIN")
+    
+    // 4. PATIENT ACCESS
+    .requestMatchers("/api/patient/**", "/patient/**").hasRole("PATIENT")
+    
+    // 5. SHARED ACCESS
+    .requestMatchers("/appointments/**").hasAnyRole("PATIENT", "DOCTOR", "ADMIN")
+    
+    .anyRequest().authenticated()
+)
             // 5. ADD JWT FILTER
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
