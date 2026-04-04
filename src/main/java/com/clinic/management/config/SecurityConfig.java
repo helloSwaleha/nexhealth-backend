@@ -56,6 +56,8 @@ public class SecurityConfig {
                 // ADMIN ACCESS
                 // We use hasAnyAuthority to match "ADMIN" or "ROLE_ADMIN" exactly as it is in your DB
                 .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctors/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                 
                 // DOCTOR ACCESS
                 .requestMatchers("/doctor/dashboard/**", "/doctor/update/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
