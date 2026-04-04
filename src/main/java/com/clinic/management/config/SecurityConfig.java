@@ -28,54 +28,46 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // 1. CORS & CSRF
-            .cors(Customizer.withDefaults()) 
-            .csrf(csrf -> csrf.disable())
+   @Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(Customizer.withDefaults()) 
+        .csrf(csrf -> csrf.disable())
+        .formLogin(form -> form.disable())
+        .httpBasic(basic -> basic.disable())
+        .sessionManagement(session -> 
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        .authorizeHttpRequests(auth -> auth
+            // 1. PUBLIC ENDPOINTS
+            .requestMatchers("/", "/error", "/auth/**").permitAll()
+            .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
+            .requestMatchers("/api/clinics/**").permitAll()
             
-            // 2. DISABLE FORM LOGIN & HTTP BASIC
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
+            // 2. DOCTOR PUBLIC FETCH (Matching your Controller exactly)
+            // Added "/doctor/**" because your Controller uses @RequestMapping("/doctor")
+            .requestMatchers(org.springframework.http.HttpMethod.GET, "/doctor/{id}").permitAll()
+            .requestMatchers("/doctor/clinic/**").permitAll() 
+            
+            // 3. ADMIN ACCESS
+            .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+            
+            // 4. DOCTOR PRIVATE ACCESS (Dashboard, Profile, Status)
+            .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
+            .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+            
+            // 5. PATIENT ACCESS
+            .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
+            
+            // 6. SHARED ACCESS
+            .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+            
+            .anyRequest().authenticated()
+        )
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-            // 3. STATELESS SESSION
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-
-            // 4. AUTHORIZE REQUESTS
-            .authorizeHttpRequests(auth -> auth
-                // PUBLIC ENDPOINTS
-                .requestMatchers("/", "/error", "/auth/**").permitAll()
-                .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
-                .requestMatchers("/api/clinics/**",  "/doctors/**").permitAll()
-                .requestMatchers("/api/doctors/clinic/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors/**").permitAll()
-                
-                // ADMIN ACCESS
-                // We use hasAnyAuthority to match "ADMIN" or "ROLE_ADMIN" exactly as it is in your DB
-                .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctors/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-                
-                // DOCTOR ACCESS
-                .requestMatchers("/doctor/dashboard/**", "/doctor/update/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
-                .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-                .requestMatchers("/api/clinics/**", "/doctors/**", "/doctor/**").permitAll()
-                .requestMatchers("/api/doctors/clinic/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors/**", "/doctor/**").permitAll()
-                
-                // PATIENT ACCESS
-                .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
-                
-                // SHARED ACCESS
-                .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-                
-                .anyRequest().authenticated()
-            )
-
-            // 5. ADD JWT FILTER
+    return http.build();
+}            // 5. ADD JWT FILTER
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
