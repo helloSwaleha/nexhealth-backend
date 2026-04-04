@@ -78,6 +78,10 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             // Keep your POST rule restricted to Doctors only
             .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctor/prescriptions/**")
             .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
+
+            // ✅ FIX: Allow both Patients and Doctors to SEE prescriptions (GET)
+            .requestMatchers(HttpMethod.GET, "/api/doctor/prescriptions/**")
+            .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT")
             
             .anyRequest().authenticated()
         )
