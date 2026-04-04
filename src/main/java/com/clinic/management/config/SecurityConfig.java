@@ -55,6 +55,8 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             // 4. DOCTOR PRIVATE ACCESS (Dashboard, Profile, Status)
             .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
             .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+            // Inside authorizeHttpRequests
+            .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
             
             // 5. PATIENT ACCESS
             .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
