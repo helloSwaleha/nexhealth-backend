@@ -62,6 +62,9 @@ public class SecurityConfig {
                 // DOCTOR ACCESS
                 .requestMatchers("/doctor/dashboard/**", "/doctor/update/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
                 .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/api/clinics/**", "/doctors/**", "/doctor/**").permitAll()
+                .requestMatchers("/api/doctors/clinic/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors/**", "/doctor/**").permitAll()
                 
                 // PATIENT ACCESS
                 .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
