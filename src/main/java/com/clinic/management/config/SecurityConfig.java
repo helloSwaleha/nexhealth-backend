@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/error", "/auth/**").permitAll()
                 .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
                 .requestMatchers("/api/clinics/**", "/api/doctors/**", "/doctors/**").permitAll()
+                .requestMatchers("/api/doctors/clinic/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors/**").permitAll()
                 
                 // ADMIN ACCESS
