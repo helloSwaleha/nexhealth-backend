@@ -43,6 +43,11 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/", "/error", "/auth/**").permitAll()
             .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
             .requestMatchers("/api/clinics/**").permitAll()
+             // ✅ FIX 1: Allow patients to see their own appointments
+            .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
+    
+            // ✅ FIX 2: Allow patients to view prescriptions (This matches the /api/doctor prefix in your JSX)
+            .requestMatchers("/api/doctor/prescriptions/**").hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_PATIENT", "ADMIN")
             
             // 2. DOCTOR PUBLIC FETCH (Matching your Controller exactly)
             // Added "/doctor/**" because your Controller uses @RequestMapping("/doctor")
