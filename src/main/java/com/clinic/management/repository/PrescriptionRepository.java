@@ -16,6 +16,8 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
 
     List<Prescription> findByAppointmentId(Long appointmentId);
 
+    List<Prescription> findByPatientId(Long patientId);
+
     // FIXED: Removed the @EntityGraph findAll() that was causing the error.
     // JpaRepository already provides a standard findAll().
 
