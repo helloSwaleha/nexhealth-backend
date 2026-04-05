@@ -68,6 +68,9 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
             .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
             .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
+                       
+            // Allow patients to access their own prescription endpoints
+            .requestMatchers("/api/patient/prescriptions/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN")
 
             // 5. CATCH-ALL DOCTOR PATH (Keep this low in the list)
             .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
