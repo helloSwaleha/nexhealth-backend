@@ -1,17 +1,15 @@
 package com.clinic.management.exception;
 
+
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor // Added this so Jackson can create the object if needed
+@Data
+@NoArgsConstructor
+@AllArgsConstructor // ✅ This creates the 5-argument constructor needed
 public class ErrorResponse {
-
     private LocalDateTime timestamp;
     private int status;
     private String error;
