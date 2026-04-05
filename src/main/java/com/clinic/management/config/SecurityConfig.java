@@ -29,7 +29,7 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-  @Bean
+ @Bean
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .cors(Customizer.withDefaults()) 
@@ -40,61 +40,40 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
         .authorizeHttpRequests(auth -> auth
-            // 1. PUBLIC ENDPOINTS
+            // 1. PUBLIC ENDPOINTS (No Token Needed)
             .requestMatchers("/", "/error", "/auth/**").permitAll()
             .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
-            .requestMatchers("/api/clinics/**").permitAll()
-             // ✅ FIX 1: Allow patients to see their own appointments
-            .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
-            // ✅ FIX: Allow Doctors to POST prescriptions
-            .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctor/prescriptions/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
-            .requestMatchers("/api/doctor/prescriptions/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
-            // ✅ FIX 2: Allow patients to view prescriptions (This matches the /api/doctor prefix in your JSX)
-            .requestMatchers("/api/doctor/prescriptions/**").hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_PATIENT", "ADMIN")
-            
-            // 2. DOCTOR PUBLIC FETCH (Matching your Controller exactly)
-            // Added "/doctor/**" because your Controller uses @RequestMapping("/doctor")
+            .requestMatchers("/api/clinics/**", "/doctor/clinic/**").permitAll()
             .requestMatchers(org.springframework.http.HttpMethod.GET, "/doctor/{id}").permitAll()
-            .requestMatchers("/doctor/clinic/**").permitAll() 
+
+            // 2. PRESCRIPTION RULES (CRITICAL ORDERING)
+            // Rule A: Allow Patients AND Doctors to VIEW prescriptions
+            .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctor/prescriptions/**")
+                .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT", "ADMIN")
             
-            // 3. ADMIN ACCESS
-            .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-            
-            // 4. DOCTOR PRIVATE ACCESS (Dashboard, Profile, Status)
-            .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
-            .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-            // Inside authorizeHttpRequests
+            // Rule B: Allow ONLY Doctors to CREATE prescriptions
+            .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctor/prescriptions/**")
+                .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
+
+            // 3. APPOINTMENT RULES
+            .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
             .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-            
-            // 5. PATIENT ACCESS
-            .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
-            
-            // 6. SHARED ACCESS
             .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
 
-              // ✅ ALLOW BOTH DOCTORS AND PATIENTS TO GET PRESCRIPTIONS
-            .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctor/prescriptions/**")
-            .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT")
+            // 4. ROLE SPECIFIC DASHBOARDS
+            .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+            .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
+            .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
 
-            // Keep your POST rule restricted to Doctors only
-            .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctor/prescriptions/**")
-            .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
-
-            // ✅ FIX: Allow both Patients and Doctors to SEE prescriptions (GET)
-            .requestMatchers(HttpMethod.GET, "/api/doctor/prescriptions/**")
-            .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT")
-                               
-           // ✅ Keep SAVING prescriptions (POST) restricted to only Doctors
-            .requestMatchers(HttpMethod.POST, "/api/doctor/prescriptions/**")
-            .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
+            // 5. CATCH-ALL DOCTOR PATH (Keep this low in the list)
+            .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
             
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
-}
-    @Bean
+}    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
