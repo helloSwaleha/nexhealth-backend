@@ -64,6 +64,10 @@ public class PrescriptionService {
 		return prescriptionRepository.findById(id).orElse(null);
 	}
 
+	public List<Prescription> getPrescriptionsByDoctor(Long doctorId) {
+    return prescriptionRepository.findByDoctorId(doctorId);
+}
+
 	public List<Prescription> getHistoryByPatient(Long patientId) {
 	    // ✅ FIX: Use the repository to find data
 	    List<Prescription> history = prescriptionRepository.findByPatientId(patientId);
