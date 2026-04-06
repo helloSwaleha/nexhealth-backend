@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import com.clinic.management.dto.StatusUpdateRequest;
 import com.clinic.management.entity.Appointment;
 import com.clinic.management.entity.Doctor;
