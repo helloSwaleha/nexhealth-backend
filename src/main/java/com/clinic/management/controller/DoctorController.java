@@ -45,6 +45,20 @@ public class DoctorController {
          .<ResponseEntity<?>>map(ResponseEntity::ok)
          .orElse(ResponseEntity.status(404).body("Doctor profile not found"));
  }
+
+    @GetMapping("/my-patients-history")
+public ResponseEntity<?> getMyPatientsHistory(Principal principal) {
+    // 1. Get the logged-in doctor's email from the token
+    String email = principal.getName();
+    
+    // 2. Find the doctor object to get their ID
+    Doctor doctor = doctorService.findByEmail(email); 
+    
+    // 3. ONLY fetch prescriptions where doctor_id = this doctor's ID
+    List<Prescription> history = prescriptionService.getPrescriptionsByDoctor(doctor.getId());
+    
+    return ResponseEntity.ok(history);
+}
  
  
  @GetMapping("/{doctorId}/schedule")
