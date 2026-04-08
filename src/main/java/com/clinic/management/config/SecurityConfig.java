@@ -29,62 +29,58 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
- @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .cors(Customizer.withDefaults()) 
-        .csrf(csrf -> csrf.disable())
-        .formLogin(form -> form.disable())
-        .httpBasic(basic -> basic.disable())
-        .sessionManagement(session -> 
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        )
-        .authorizeHttpRequests(auth -> auth
-            // 1. PUBLIC ENDPOINTS (No Token Needed)
-            .requestMatchers("/", "/error", "/auth/**").permitAll()
-            .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
-            .requestMatchers("/api/clinics/**", "/doctor/clinic/**").permitAll()
-            .requestMatchers(org.springframework.http.HttpMethod.GET, "/doctor/{id}").permitAll()
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+            .csrf(csrf -> csrf.disable())
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
+            .sessionManagement(session -> 
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .authorizeHttpRequests(auth -> auth
+                // ✅ CRITICAL: Allow all OPTIONS requests for CORS pre-flight checks
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-            // 2. PRESCRIPTION RULES (CRITICAL ORDERING)
-            // Rule A: Allow Patients AND Doctors to VIEW prescriptions
-            .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctor/prescriptions/**")
-                .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT", "ADMIN")
-                               
-            //patient dashboard recent prescription show
-             .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/patient/prescriptions/**")
-                .hasAnyAuthority("DOCTOR", "PATIENT", "ROLE_DOCTOR", "ROLE_PATIENT", "ADMIN")
-            
-            // Rule B: Allow ONLY Doctors to CREATE prescriptions
-            .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/doctor/prescriptions/**")
-                .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
+                // 1. PUBLIC ENDPOINTS
+                .requestMatchers("/", "/error", "/auth/**").permitAll()
+                .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
+                .requestMatchers("/api/clinics/**", "/doctor/clinic/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/doctor/{id}").permitAll()
 
-            // 3. APPOINTMENT RULES
-            .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
-            .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-            .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+                // 2. PRESCRIPTION RULES
+                // View Access
+                .requestMatchers(HttpMethod.GET, "/api/doctor/prescriptions/**", "/api/patient/prescriptions/**", "/api/doctor/my-patients-history")
+                    .hasAnyAuthority("DOCTOR", "PATIENT", "ADMIN", "ROLE_DOCTOR", "ROLE_PATIENT", "ROLE_ADMIN")
+                
+                // Creation Access
+                .requestMatchers(HttpMethod.POST, "/api/doctor/prescriptions/**")
+                    .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
 
-            // 4. ROLE SPECIFIC DASHBOARDS
-            .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-            .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR")
-            .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT")
-                       
-            // Allow patients to access their own prescription endpoints
-            .requestMatchers("/api/patient/prescriptions/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN")
+                // 3. APPOINTMENT RULES
+                .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "DOCTOR", "ADMIN", "ROLE_PATIENT", "ROLE_DOCTOR", "ROLE_ADMIN")
 
-            // 5. CATCH-ALL DOCTOR PATH (Keep this low in the list)
-            .requestMatchers("/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
-            
-            .anyRequest().authenticated()
-        )
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                // 4. ROLE SPECIFIC DASHBOARDS
+                .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/doctor/dashboard/**", "/doctor/appointments/**", "/doctor/profile/**", "/api/doctor/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
+                .requestMatchers("/api/patient/**", "/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
 
-    return http.build();
-}    @Bean
+                // 5. CATCH-ALL
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Removed trailing slash from Vercel URL and added common variations
+        // Allowed Origins (Vercel + Local)
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:5173",
@@ -92,10 +88,11 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // Allowed all common headers to prevent pre-flight 403s
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        
+        // ✅ Wildcard allowed headers to prevent pre-flight 403s on Admin Login
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
         configuration.setAllowCredentials(true);
-        // Important for the frontend to read the token if sent in headers
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
