@@ -16,12 +16,5 @@ public class ErrorResponse {
     private String message;
     private String path;
 
-    // Add this constructor
-    public ErrorResponse(java.time.LocalDateTime timestamp, int status, String error, String message, String path) {
-        this.timestamp = timestamp;
-        this.status = status;
-        this.error = error;
-        this.message = message;
-        this.path = path;
-    }
+
 }
