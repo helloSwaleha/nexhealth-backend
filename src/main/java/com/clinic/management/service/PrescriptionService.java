@@ -72,13 +72,17 @@ public class PrescriptionService {
 		return null;
 	}
 
-	public List<Prescription> getHistoryByDoctorAndPatient(String doctorEmail, Long patientId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
+	public List<Prescription> getHistoryByDoctorAndPatient(String email, Long patientId) {
+    Doctor doctor = doctorRepository.findByEmail(email);
+    // 3. Filter by both Doctor and Patient for privacy
+    return prescriptionRepository.findByDoctorIdAndPatientId(doctor.getId(), patientId);
+}
 
 	public List<Prescription> getPrescriptionsByDoctorEmail(String email) {
+    // 1. Find the doctor by email to get their ID
     Doctor doctor = doctorRepository.findByEmail(email);
+    // 2. Return all prescriptions where doctorId matches
     return prescriptionRepository.findByDoctorId(doctor.getId());
 }
 	
