@@ -84,6 +84,8 @@ public class SecurityConfig {
                 .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
                 .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
                 .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "DOCTOR", "ADMIN", "ROLE_PATIENT", "ROLE_DOCTOR", "ROLE_ADMIN")
+                 .requestMatchers("/api/doctor-my-data/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
+                .requestMatchers("/auth/login").permitAll()
 
                 // 4. ROLE SPECIFIC DASHBOARDS
                 .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
