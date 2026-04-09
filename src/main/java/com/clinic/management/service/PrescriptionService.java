@@ -73,7 +73,8 @@ public class PrescriptionService {
 }
 
 	public List<Prescription> getHistoryByDoctorAndPatient(String email, Long patientId) {
-    Doctor doctor = doctorRepository.findByEmail(email);
+    Doctor doctor = doctorRepository.findByEmail(email).orElse(null);
+		if (doctor == null) return new ArrayList<>();
     // 3. Filter by both Doctor and Patient for privacy
     return prescriptionRepository.findByDoctorIdAndPatientId(doctor.getId(), patientId);
 }
