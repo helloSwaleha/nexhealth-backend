@@ -72,6 +72,11 @@ public class PrescriptionService {
 		return null;
 	}
 
+	public List<Prescription> getHistoryByDoctorAndPatient(String doctorEmail, Long patientId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public List<Prescription> getHistoryByPatient(Long patientId) {
 	    // ✅ FIX: Use the repository to find data
 	    List<Prescription> history = prescriptionRepository.findByPatientId(patientId);
