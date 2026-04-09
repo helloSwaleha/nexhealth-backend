@@ -77,6 +77,11 @@ public class PrescriptionService {
 		return null;
 	}
 
+	public List<Prescription> getPrescriptionsByDoctorEmail(String email) {
+    Doctor doctor = doctorRepository.findByEmail(email);
+    return prescriptionRepository.findByDoctorId(doctor.getId());
+}
+	
 	public List<Prescription> getHistoryByPatient(Long patientId) {
 	    // ✅ FIX: Use the repository to find data
 	    List<Prescription> history = prescriptionRepository.findByPatientId(patientId);
