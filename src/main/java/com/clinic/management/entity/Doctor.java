@@ -46,13 +46,32 @@ public class Doctor extends BaseEntity {
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "clinic_id", referencedColumnName = "id", nullable = false)
-     
     private Clinic clinic;
+
+	
 
 	public void setDegree(String string) {
 		// TODO Auto-generated method stub
 		
 	}
+
+	// --- MANUALLY ADD THESE SETTERS (Used by the Controller) ---
+    public void setName(String name) { this.name = name; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPassword(String password) { this.password = password; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setSpecialization(String spec) { this.specialization = spec; }
+    public void setQualification(String qual) { this.qualification = qual; }
+    public void setExperience(int exp) { this.experience = exp; }
+    public void setFee(double fee) { this.fee = fee; }
+    public void setClinic(Clinic clinic) { this.clinic = clinic; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public void setStatus(Status status) { this.status = status; }
+
+	// --- ADD GETTERS (Used by AuthService/Security) ---
+    public Long getId() { return id; }
+    public String getEmail() { return email; }
+    public String getPassword() { return password; }
 
     // Lombok handles Getters/Setters
 }
