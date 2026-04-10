@@ -1,7 +1,6 @@
 package com.clinic.management.entity;
 
 import java.time.LocalDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,7 +20,7 @@ public abstract class BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-   protected Long id;
+    protected Long id; // ✅ Added the missing semicolon here
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -39,17 +38,6 @@ public abstract class BaseEntity {
         updatedAt = LocalDateTime.now();
     }
 
-    /* ===== Getters & Setters ===== */
-
-    public Long getId() {
-        return id;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    // Manual getters/setters removed because @Getter/@Setter 
+    // from Lombok handles them automatically!
 }
