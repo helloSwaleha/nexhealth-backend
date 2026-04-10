@@ -21,5 +21,5 @@ public interface ClinicRepository extends JpaRepository<Clinic, Long> {
     
     List<Clinic> findTop5ByOrderByIdDesc();
 
-	Optional<Clinic> findByName(Object clinicName);
+	//Optional<Clinic> findByName(Object clinicName);
 }
