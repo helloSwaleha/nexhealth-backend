@@ -1,12 +1,14 @@
 package com.clinic.management.service;
+
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import com.clinic.management.entity.Prescription;
 import com.clinic.management.repository.PrescriptionRepository;
@@ -16,20 +18,17 @@ import com.clinic.management.repository.DoctorRepository;
 @Service
 public class PrescriptionService {
 
-    // 1. Declare the repository variable
     private final PrescriptionRepository prescriptionRepository;
-	private final DoctorRepository doctorRepository;
+    private final DoctorRepository doctorRepository;
 
-    // 2. Inject it via constructor
     public PrescriptionService(PrescriptionRepository prescriptionRepository, DoctorRepository doctorRepository) {
         this.prescriptionRepository = prescriptionRepository;
-		this.doctorRepository = doctorRepository;
+        this.doctorRepository = doctorRepository;
     }
 
     public List<Prescription> getPrescriptionsByPatientEmail(String email) {
         List<Prescription> list = prescriptionRepository.findByPatientEmail(email);
-        // If list is null for some reason, return an empty list instead of null
-        return (list != null) ? list : new ArrayList<>();
+        return (list != null) ? list : Collections.emptyList();
     }
     
     public void exportToPDF(Prescription prescription, HttpServletResponse response) throws IOException {
@@ -38,18 +37,15 @@ public class PrescriptionService {
 
         document.open();
         
-        // Add Fonts/Styles
         Font fontTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
         fontTitle.setSize(18);
         
-        // Title
         Paragraph title = new Paragraph("MEDICAL PRESCRIPTION", fontTitle);
         title.setAlignment(Paragraph.ALIGN_CENTER);
         document.add(title);
         
         document.add(new Paragraph(" ")); // Spacer
 
-        // Content
         document.add(new Paragraph("Date: " + prescription.getCreatedAt()));
         document.add(new Paragraph("Doctor: " + prescription.getDoctor().getName()));
         document.add(new Paragraph("Patient: " + prescription.getPatient().getName()));
@@ -62,35 +58,31 @@ public class PrescriptionService {
         document.close();
     }
 
-	
-	public Prescription getPrescriptionById(Long id) {
-		// TODO Auto-generated method stub
-		return prescriptionRepository.findById(id).orElse(null);
-	}
+    public Prescription getPrescriptionById(Long id) {
+        return prescriptionRepository.findById(id).orElse(null);
+    }
 
-	public List<Prescription> getPrescriptionsByDoctor(Long doctorId) {
-    return prescriptionRepository.findByDoctorId(doctorId);
-}
+    public List<Prescription> getPrescriptionsByDoctor(Long doctorId) {
+        return prescriptionRepository.findByDoctorId(doctorId);
+    }
 
-	public List<Prescription> getHistoryByDoctorAndPatient(String email, Long patientId) {
-    Doctor doctor = doctorRepository.findByEmail(email).orElse(null);
-		if (doctor == null) return new ArrayList<>();
-    // 3. Filter by both Doctor and Patient for privacy
-    return prescriptionRepository.findByDoctorIdAndPatientId(doctor.getId(), patientId);
-}
+    public List<Prescription> getHistoryByDoctorAndPatient(String email, Long patientId) {
+        // ✅ Fixed the Optional conversion here
+        return doctorRepository.findByEmail(email)
+                .map(doctor -> prescriptionRepository.findByDoctorIdAndPatientId(doctor.getId(), patientId))
+                .orElse(Collections.emptyList());
+    }
 
-	public List<Prescription> getPrescriptionsByDoctorEmail(String email) {
-    // 1. Find the doctor by email to get their ID
-    Doctor doctor = doctorRepository.findByEmail(email);
-    // 2. Return all prescriptions where doctorId matches
-    return prescriptionRepository.findByDoctorId(doctor.getId());
-}
-	
-	public List<Prescription> getHistoryByPatient(Long patientId) {
-	    // ✅ FIX: Use the repository to find data
-	    List<Prescription> history = prescriptionRepository.findByPatientId(patientId);
-	    
-	    // Always return an empty list [] instead of null to prevent frontend errors
-	    return (history != null) ? history : new ArrayList<>();
-	}
+    public List<Prescription> getPrescriptionsByDoctorEmail(String email) {
+        // ✅ Correctly unwrapping the Optional with a RuntimeException
+        Doctor doctor = doctorRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Doctor not found with email: " + email));
+        
+        return prescriptionRepository.findByDoctorId(doctor.getId());
+    }
+    
+    public List<Prescription> getHistoryByPatient(Long patientId) {
+        List<Prescription> history = prescriptionRepository.findByPatientId(patientId);
+        return (history != null) ? history : Collections.emptyList();
+    }
 }
