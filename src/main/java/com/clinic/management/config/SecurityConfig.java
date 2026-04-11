@@ -71,6 +71,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/error", "/auth/**").permitAll()
                 .requestMatchers("/api/patient/login", "/api/patient/signup").permitAll()
                 .requestMatchers("/api/clinics/**", "/doctor/clinic/**").permitAll()
+                .requestMatchers("/api/doctors/clinic/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/doctor/{id}").permitAll()
 
                 // 2. PRESCRIPTION RULES
