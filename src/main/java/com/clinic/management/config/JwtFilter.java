@@ -39,9 +39,10 @@ public class JwtFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
+        String path = request.getServletPath();
 
-        // 1. Skip filter for /auth endpoints or if header is missing/invalid
-        if (request.getServletPath().contains("/auth/login")) {
+        // 1. Skip filter for public endpoints
+        if (path.contains("/auth/") || path.equals("/error")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -52,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(token);
             } catch (Exception e) {
-                logger.error("Could not extract username from token: {}", e.getMessage());
+                logger.error("JWT Error for path {}: {}", path, e.getMessage());
             }
         }
 
@@ -61,11 +62,8 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                // Check if token is valid against the database user
                 if (jwtUtil.validateToken(token, userDetails)) {
-                    
-                    // We use userDetails.getAuthorities() which pulls ROLE_ADMIN/ROLE_DOCTOR 
-                    // from your CustomUserDetailsService
+                    // Create authentication token with user's authorities (roles)
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -80,15 +78,16 @@ public class JwtFilter extends OncePerRequestFilter {
                     // Finalize authentication in Spring Security Context
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     
-                    logger.info("Successfully authenticated user: {} with roles: {}", 
-                                username, userDetails.getAuthorities());
+                    // ✅ DIAGNOSTIC LOG: This is critical. Check your Render logs for this!
+                    logger.info("AUTH SUCCESS: User [{}] Path [{}] Roles {}", 
+                                username, path, userDetails.getAuthorities());
                 } else {
-                    logger.warn("Token validation failed for user: {}", username);
+                    logger.warn("AUTH FAILED: Token invalid for user [{}] on path [{}]", username, path);
                 }
             } catch (UsernameNotFoundException e) {
-                logger.warn("User not found in database: {}", username);
+                logger.warn("AUTH FAILED: User not found [{}]", username);
             } catch (Exception e) {
-                logger.error("Security Context setting error: ", e);
+                logger.error("AUTH ERROR: Internal security error: ", e);
             }
         }
 
