@@ -30,8 +30,7 @@ public class SecurityConfig {
     }
 
     /**
-     * ✅ THE FIX: Explicit CorsFilter Bean
-     * This ensures CORS is handled at the highest priority before any security filters.
+     * ✅ CORS Configuration
      */
     @Bean
     public CorsFilter corsFilter() {
@@ -55,7 +54,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Use the corsFilter bean defined above
             .cors(Customizer.withDefaults()) 
             .csrf(csrf -> csrf.disable())
             .formLogin(form -> form.disable())
@@ -64,7 +62,6 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // Allow pre-flight OPTIONS requests for all paths
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // 1. PUBLIC ENDPOINTS
@@ -73,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/clinics/**", "/doctor/clinic/**").permitAll()
                 .requestMatchers("/api/doctors/clinic/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/doctor/{id}").permitAll()
+                .requestMatchers("/auth/login").permitAll()
 
                 // 2. PRESCRIPTION RULES
                 .requestMatchers(HttpMethod.GET, "/api/doctor/prescriptions/**", "/api/patient/prescriptions/**", "/api/doctor/my-patients-history")
@@ -82,14 +80,14 @@ public class SecurityConfig {
                     .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
 
                 // 3. APPOINTMENT RULES
+                // ✅ NEW LINE ADDED HERE: Fixes the 403 for booking
+                .requestMatchers("/api/patient-appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
+                
                 .requestMatchers("/appointments/patient/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
                 .requestMatchers("/appointments/doctor/**", "/appointments/{id}/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN", "ROLE_ADMIN")
                 .requestMatchers("/appointments/**").hasAnyAuthority("PATIENT", "DOCTOR", "ADMIN", "ROLE_PATIENT", "ROLE_DOCTOR", "ROLE_ADMIN")
-                 .requestMatchers("/api/doctor-my-data/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
-                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/api/doctor-my-data/**").hasAnyAuthority("DOCTOR", "ROLE_DOCTOR", "ADMIN")
                 .requestMatchers("/appointments/admin/**").hasAuthority("ADMIN")
-              
-                .requestMatchers("/api/patient-appointments/**").hasAnyAuthority("PATIENT", "ROLE_PATIENT", "ADMIN", "ROLE_ADMIN")
 
                 // 4. ROLE SPECIFIC DASHBOARDS
                 .requestMatchers("/admin/**", "/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
